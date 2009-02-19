@@ -36,19 +36,13 @@ module Fit
           file_basename = basename.split(/([A-Z][^A-Z]+)/).delete_if {|e| e.empty?}.collect {|e| e.downcase!}.join('_')
           file_dirname = File::dirname(file_path)
           file_name = (file_dirname == '.' ? '' : file_dirname + '/') + file_basename
-          begin
-            begin
-              require file_name
-            rescue LoadError
-              require file_name.downcase
-            end
-          rescue LoadError
-            #raise "Couldn't load file #{file_name} or file #{file_name.downcase}"
-          end
+
+          require_file file_name
+
           if file_dirname == '.'
             klass_name = classname
           else
-            klass_name =  File::dirname(file_path).split(%r{/}).collect { |e|
+            klass_name = File::dirname(file_path).split(%r{/}).collect { |e|
               e.index(/[A-Z]/).nil? ? e.capitalize : e
             }.join('::') + "::#{classname}"
           end
@@ -60,9 +54,19 @@ module Fit
     
     def find_constant name
       class_name = name.gsub '.', '::'
-      classes = []
-      ObjectSpace.each_object(Class) { |klass| classes << klass }
-      classes.find { |klass| klass.name == class_name }
+      return class_name.split("::").inject(Object) { |par, const| par.const_get(const) }
+    rescue NameError
+      return nil
+    end
+
+    def require_file file_name 
+      begin
+        require file_name.downcase
+      rescue LoadError
+        require file_name
+      end
+    rescue LoadError
+      #raise "Couldn't load file #{file_name} or file #{file_name.downcase}"
     end
     
     @@fixture_packages=['Fit::']
@@ -70,6 +74,7 @@ module Fit
     # Supports import_fixture
     def FixtureLoader.add_fixture_package module_name
       @@fixture_packages << module_name + '::'
+      @@fixture_packages.uniq!
     end
     
   end
