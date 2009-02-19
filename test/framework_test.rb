@@ -24,7 +24,7 @@ module Fit
       # run_page 'SimpleExample', 5, 0, 0, 0
     end
     def run_page file, right, wrong, ignores, exceptions
-      input = File.open("../../examples/#{file}.html") {|f| f.read}
+      input = File.open(File.join(File.dirname(__FILE__), "../doc/examples/#{file}.html")) {|f| f.read}
       fixture = Fixture.new
       tables = nil
       unless input.index('<wiki>').nil?
